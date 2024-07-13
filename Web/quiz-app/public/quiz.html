@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz App</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Quiz App</h1>
+            <nav>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/quiz">Quiz</a></li>
+                    <li><a href="/results">Results</a></li>
+                </ul>
+            </nav>
+        </header>
+        <div id="content">
+            <h2>Quiz</h2>
+            <div id="quiz"></div>
+            <footer>
+                <button id="next-question" class="btn">Next Question</button>
+            </footer>
+        </div>
+    </div>
+    <script>
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let correctAnswersCount = 0;
+
+        async function fetchQuizQuestions(amount = 10) {
+            const response = await fetch('/api/questions?amount=' + amount);
+            const data = await response.json();
+            questions = data;
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const quizContainer = document.getElementById('quiz');
+            quizContainer.innerHTML = '';
+
+            const question = questions[currentQuestionIndex];
+            const questionElement = document.createElement('div');
+            questionElement.className = 'question';
+            questionElement.innerHTML = `<h2>${currentQuestionIndex + 1}. ${question.question}</h2>`;
+
+            const optionsList = document.createElement('ul');
+            optionsList.className = 'options';
+
+            const allAnswers = [...question.incorrect_answers, question.correct_answer].sort(() => Math.random() - 0.5);
+            allAnswers.forEach(answer => {
+                const optionItem = document.createElement('li');
+                const optionButton = document.createElement('button');
+                optionButton.textContent = answer;
+                optionButton.onclick = () => {
+                    if (answer === question.correct_answer) {
+                        correctAnswersCount++;
+                    }
+                    currentQuestionIndex++;
+                    if (currentQuestionIndex < questions.length) {
+                        showQuestion();
+                    } else {
+                        window.location.href = `/results?correct=${correctAnswersCount}&total=${questions.length}`;
+                    }
+                };
+                optionItem.appendChild(optionButton);
+                optionsList.appendChild(optionItem);
+            });
+
+            quizContainer.appendChild(questionElement);
+            quizContainer.appendChild(optionsList);
+        }
+
+        document.getElementById('next-question').onclick = () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                window.location.href = `/results?correct=${correctAnswersCount}&total=${questions.length}`;
+            }
+        };
+
+        fetchQuizQuestions();
+    </script>
+</body>
+</html>
